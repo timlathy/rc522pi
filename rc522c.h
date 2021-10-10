@@ -87,7 +87,6 @@ struct rc522c_state
     int spi;
     // GPIO pin number for RST
     int rst_pin;
-    int irq_pin;
 
     // Chip version
     // MFRC522 data sheet, section 9.3.4.8 lists two versions: 0x91 and 0x92.

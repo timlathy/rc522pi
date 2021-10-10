@@ -5,7 +5,6 @@
 
 static PyObject* RC522Error;
 static PyObject* RC522TagError;
-static PyObject* RC522TagMissingError;
 
 struct rc522
 {
@@ -29,7 +28,7 @@ static void _raise_error(struct rc522c_state* cstate, enum rc522c_status status)
         PyErr_Format(RC522Error, "device does not respond to commands");
         break;
     case RC522C_STATUS_ERROR_TAG_MISSING:
-        PyErr_Format(RC522TagMissingError, "no response from the tag (rc522c.c:%d)", cstate->error_line);
+        PyErr_Format(RC522TagError, "no response from the tag (rc522c.c:%d)", cstate->error_line);
         break;
     case RC522C_STATUS_ERROR_TAG_UNSUPPORTED:
         PyErr_Format(RC522TagError, "unsupported tag (rc522c.c:%d)", cstate->error_line);
@@ -193,7 +192,8 @@ static PyObject* rc522_ntag_protect(struct rc522* self, PyObject* args, PyObject
     int start_page;
 
     static char* kwlist[] = {"pwd", "pack", "start_page", "mode", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#s#is", kwlist, &pwd, &pwd_len, &pack, &pack_len, &start_page, &mode))
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwargs, "s#s#is", kwlist, &pwd, &pwd_len, &pack, &pack_len, &start_page, &mode))
         return NULL;
 
     if (pwd_len != RC522_PWD_LEN)
@@ -218,7 +218,9 @@ static PyObject* rc522_ntag_protect(struct rc522* self, PyObject* args, PyObject
     }
     else
     {
-        PyErr_SetString(PyExc_ValueError, "mode can be either 'w' (protect write access) or 'rw' (protect both read and write access)");
+        PyErr_SetString(
+            PyExc_ValueError,
+            "mode can be either 'w' (protect write access) or 'rw' (protect both read and write access)");
         return NULL;
     }
 
@@ -328,19 +330,11 @@ PyMODINIT_FUNC PyInit_rc522pi(void)
 
     RC522TagError = PyErr_NewExceptionWithDoc(
         "rc522pi.RC522TagError",
-        "This exception indicates that the tag command completed with an error: either a NAK or an unexpected "
-        "response.",
+        "This exception indicates that the tag command completed with either a NAK or an unexpected response.",
         RC522Error, NULL);
     if (!RC522TagError)
         return NULL;
     PyModule_AddObject(module, "RC522TagError", RC522TagError);
-
-    RC522TagMissingError = PyErr_NewExceptionWithDoc(
-        "rc522pi.RC522TagMissingError",
-        "This exception indicates that no data was received after transmitting a tag command.", RC522Error, NULL);
-    if (!RC522TagMissingError)
-        return NULL;
-    PyModule_AddObject(module, "RC522TagMissingError", RC522TagMissingError);
 
     return module;
 }

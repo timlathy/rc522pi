@@ -7,6 +7,7 @@
 
 // Must run as root
 // Based on https://github.com/ondryaso/pi-rc522
+// Total/free memory: vcgencmd get_mem reloc_total/reloc
 
 // clang-format off
 #define CHECK_PIGPIO(s, expr) {int ret = expr; if (ret < 0) { s->error_line = __LINE__; s->error_code = ret; return RC522C_STATUS_ERROR_PIGPIO; }}
@@ -327,22 +328,23 @@ enum rc522c_status rc522c_ntag_authenticate(struct rc522c_state* s, const char* 
     return RC522C_STATUS_SUCCESS;
 }
 
-enum rc522c_status rc522c_ntag_protect(struct rc522c_state* s, const char* pwd, const char* pack, int start_page, int rw)
+enum rc522c_status rc522c_ntag_protect(
+    struct rc522c_state* s, const char* pwd, const char* pack, int start_page, int rw)
 {
     int config_start_page;
     switch (s->tag_kind)
     {
-        case RC522C_TAG_KIND_213:
-            config_start_page = 0x29;
-            break;
-        case RC522C_TAG_KIND_215:
-            config_start_page = 0x83;
-            break;
-        case RC522C_TAG_KIND_216:
-            config_start_page = 0xE3;
-            break;
-        default:
-            RETURN_RC522C_ERROR(s, RC522C_STATUS_ERROR_TAG_UNSUPPORTED, 0);
+    case RC522C_TAG_KIND_213:
+        config_start_page = 0x29;
+        break;
+    case RC522C_TAG_KIND_215:
+        config_start_page = 0x83;
+        break;
+    case RC522C_TAG_KIND_216:
+        config_start_page = 0xE3;
+        break;
+    default:
+        RETURN_RC522C_ERROR(s, RC522C_STATUS_ERROR_TAG_UNSUPPORTED, 0);
     }
 
     // Rewrite PWD
@@ -361,7 +363,8 @@ enum rc522c_status rc522c_ntag_protect(struct rc522c_state* s, const char* pwd, 
     config_data[13] = pack[1];
     CHECK_RC522C_STATUS(s, rc522c_ntag_write(s, config_start_page + 3, &config_data[12]));
 
-    // Rewrite PROT (bit 7 of ACCESS) (0 = write access is protected by password, 1 = read and write access is protected)
+    // Rewrite PROT (bit 7 of ACCESS) (0 = write access is protected by password, 1 = read and write access is
+    // protected)
     if (rw)
         config_data[4] |= 0x80;
     else
@@ -385,14 +388,14 @@ enum rc522c_status rc522c_init(struct rc522c_state* s, int spi_baud_rate, int an
     // Chinese knock-offs (vresion register 0x37 returning 0x12) do not implement soft reset.
     // Before interfacing with the chip, perform a hard reset, just in case.
 
-    // Set RST to LOW for at least 100ns (MFRC522 8.8.1); we'll wait for 100us
+    // Set RST to LOW for at least 100ns (MFRC522 8.8.1); we'll wait for 10us
     CHECK_PIGPIO(s, gpioWrite(rst_pin, PI_LOW));
-    gpioDelay(100);
+    gpioDelay(10);
 
     // Set RST to HIGH and wait for the chip to start.
-    // Testing shows that the chip doesn't reply until at least 100us have passed; we'll wait for 200us to be sure.
+    // Testing shows that the chip doesn't reply until at least 200us have passed; we'll wait for 400us to be sure.
     CHECK_PIGPIO(s, gpioWrite(rst_pin, PI_HIGH));
-    gpioDelay(200);
+    gpioDelay(400);
 
     return init_dev(s, antenna_gain);
 }
