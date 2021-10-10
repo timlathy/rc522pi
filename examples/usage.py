@@ -15,7 +15,6 @@
 # 4. Close raspi-config and reboot
 
 from rc522pi import RC522, RC522Error, RC522TagError
-from time import sleep
 
 PASSWORD = b"\xAB\x06\x05\xFF"
 PACK = b"\xB0\xBA"
